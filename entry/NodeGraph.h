@@ -10,6 +10,8 @@ struct Coord {
   int16_t row;
   int16_t col;
   bool isBush;
+  uint8_t clusterId;
+  uint16_t clusterIndex;
 };
 
 struct Node {
@@ -19,6 +21,8 @@ struct Node {
   uint8_t brightness;
   uint8_t startLED;
   bool isBush;
+  uint8_t clusterId;
+  uint16_t clusterIndex;
 
   uint16_t neighbours[MAX_NEIGHBOURS];
   uint8_t neighbourCount;
@@ -30,7 +34,14 @@ public:
 
   bool addNode(int16_t row, int16_t col);
   bool addNode(int16_t row, int16_t col, bool isBush);
-  bool addNode(int16_t row, int16_t col, uint16_t ledIndex, bool isBush = false);
+  bool addNode(
+    int16_t row,
+    int16_t col,
+    uint16_t ledIndex,
+    bool isBush = false,
+    uint8_t clusterId = 0,
+    uint16_t clusterIndex = 0
+  );
   bool removeNode(int16_t row, int16_t col);
 
   int findIndex(int16_t row, int16_t col) const;

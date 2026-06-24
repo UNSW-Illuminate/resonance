@@ -1,18 +1,20 @@
 #include "NodeGraph.h"
 #include "RippleEngine.h"
 #include "FastLED.h"
-#include "coordinates_final_json.h"
+#include "coordinates_new_json.h"
 #include <ArduinoJson.h>
 #include <math.h>
 
 #define DATA_PIN 6
 #define NUM_LEDS (MAX_NODES * NUM_LED_PER_NODE)
-#define JSON_DOC_CAPACITY 16384
+#define JSON_DOC_CAPACITY 20000
 
-const CRGB RIPPLE_PRIMARY_COLOUR(0, 40, 90);
-const CRGB RIPPLE_SECONDARY_COLOUR(0, 180, 255);
-const float RIPPLE_SHARPNESS = 2.0f;
-const bool RIPPLE_TAKE_OVER = false;
+const CRGB RIPPLE_PRIMARY_COLOUR(0, 0, 6);
+const CRGB RIPPLE_SECONDARY_COLOUR(20, 220, 255);
+const float RIPPLE_SHARPNESS = 1.6f;
+const float RIPPLE_VISIBILITY_THRESHOLD = 0.18f;
+const uint8_t RIPPLE_PEAK_BRIGHTNESS = 255;
+const bool RIPPLE_TAKE_OVER = true;
 
 CRGB leds[NUM_LEDS];
 
@@ -20,10 +22,8 @@ NodeGraph graph;
 Coord MAP_COORDS[MAX_NODES];
 uint16_t MAP_COUNT = 0;
 
-// Mirrors: RippleSimulator(5, 0.1, 20, 2, 1)
-// Python tick_delay is in seconds. Arduino uses milliseconds, so 0.1s -> 100ms.
 // parameters in order are thickness, tick_delay (ms), maxRadius, bands, speed
-RippleEngine ripple(graph, 300f, 200, 2.0f, 1, 0.5f);
+RippleEngine ripple(graph, 100.0f, 120, 1500.0f, 1, 40.0f);
 
 String serialLine = "";
 
@@ -41,7 +41,7 @@ void setup() {
   }
 
   if (!loadMapCoordsFromJson()) {
-    Serial.println("Failed to load coordinates_final.json");
+    Serial.println("Failed to load coordinates_new.json");
   }
 
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
@@ -49,7 +49,14 @@ void setup() {
   FastLED.show();
 
   for (uint16_t i = 0; i < MAP_COUNT; i++) {
-    graph.addNode(MAP_COORDS[i].row, MAP_COORDS[i].col, i, MAP_COORDS[i].isBush);
+    graph.addNode(
+      MAP_COORDS[i].row,
+      MAP_COORDS[i].col,
+      i,
+      MAP_COORDS[i].isBush,
+      MAP_COORDS[i].clusterId,
+      MAP_COORDS[i].clusterIndex
+    );
   }
 
   ripple.begin();
@@ -81,6 +88,8 @@ bool appendCoordsFromSection(JsonArray section, bool isBush, uint16_t& mapIndex)
     MAP_COORDS[mapIndex].row = (int16_t)lroundf(point["y"].as<float>());
     MAP_COORDS[mapIndex].col = (int16_t)lroundf(point["x"].as<float>());
     MAP_COORDS[mapIndex].isBush = isBush;
+    MAP_COORDS[mapIndex].clusterId = point["cluster_id"] | 0;
+    MAP_COORDS[mapIndex].clusterIndex = point["cluster_index"] | 0;
     mapIndex++;
   }
 
@@ -140,23 +149,23 @@ void updateLeds() {
     float t = node.brightness / 255.0f;
     t = constrain(t, 0.0f, 1.0f);
 
-    float blendFactor = powf(t, RIPPLE_SHARPNESS);
-
-    uint8_t r = 0;
-    uint8_t g = 0;
-    uint8_t b = 0;
-
-    if (RIPPLE_TAKE_OVER && t > 0.01f) {
-      r = (uint8_t)(blendFactor * RIPPLE_SECONDARY_COLOUR.r);
-      g = (uint8_t)(blendFactor * RIPPLE_SECONDARY_COLOUR.g);
-      b = (uint8_t)(blendFactor * RIPPLE_SECONDARY_COLOUR.b);
-    } else {
-      r = (uint8_t)((1.0f - blendFactor) * RIPPLE_PRIMARY_COLOUR.r + blendFactor * RIPPLE_SECONDARY_COLOUR.r);
-      g = (uint8_t)((1.0f - blendFactor) * RIPPLE_PRIMARY_COLOUR.g + blendFactor * RIPPLE_SECONDARY_COLOUR.g);
-      b = (uint8_t)((1.0f - blendFactor) * RIPPLE_PRIMARY_COLOUR.b + blendFactor * RIPPLE_SECONDARY_COLOUR.b);
+    float visible = 0.0f;
+    if (t > RIPPLE_VISIBILITY_THRESHOLD) {
+      visible = (t - RIPPLE_VISIBILITY_THRESHOLD) / (1.0f - RIPPLE_VISIBILITY_THRESHOLD);
     }
 
-    CRGB nodeColour(r, g, b);
+    float blendFactor = powf(visible, RIPPLE_SHARPNESS);
+    uint8_t waveBrightness = (uint8_t)(blendFactor * RIPPLE_PEAK_BRIGHTNESS);
+
+    CRGB nodeColour = RIPPLE_PRIMARY_COLOUR;
+
+    if (RIPPLE_TAKE_OVER) {
+      CRGB activeColour = RIPPLE_SECONDARY_COLOUR;
+      activeColour.nscale8_video(waveBrightness);
+      nodeColour += activeColour;
+    } else {
+      nodeColour = blend(RIPPLE_PRIMARY_COLOUR, RIPPLE_SECONDARY_COLOUR, waveBrightness);
+    }
 
     for (uint8_t j = 0; j < NUM_LED_PER_NODE; j++) {
       uint16_t ledIndex = node.ledIndex + j;

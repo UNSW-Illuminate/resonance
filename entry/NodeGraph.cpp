@@ -4,14 +4,21 @@
 NodeGraph::NodeGraph() : nodeCount(0) {}
 
 bool NodeGraph::addNode(int16_t row, int16_t col) {
-  return addNode(row, col, nodeCount, false);
+  return addNode(row, col, nodeCount, false, 0, 0);
 }
 
 bool NodeGraph::addNode(int16_t row, int16_t col, bool isBush) {
-  return addNode(row, col, nodeCount, isBush);
+  return addNode(row, col, nodeCount, isBush, 0, 0);
 }
 
-bool NodeGraph::addNode(int16_t row, int16_t col, uint16_t ledIndex, bool isBush) {
+bool NodeGraph::addNode(
+  int16_t row,
+  int16_t col,
+  uint16_t ledIndex,
+  bool isBush,
+  uint8_t clusterId,
+  uint16_t clusterIndex
+) {
   if (nodeCount >= MAX_NODES) {
     return false;
   }
@@ -27,6 +34,8 @@ bool NodeGraph::addNode(int16_t row, int16_t col, uint16_t ledIndex, bool isBush
   node.brightness = 0;
   node.startLED = 0;
   node.isBush = isBush;
+  node.clusterId = clusterId;
+  node.clusterIndex = clusterIndex;
   node.neighbourCount = 0;
 
   uint16_t newIndex = nodeCount;
