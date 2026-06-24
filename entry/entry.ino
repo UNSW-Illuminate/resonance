@@ -1,7 +1,7 @@
 #include "NodeGraph.h"
 #include "RippleEngine.h"
 #include "FastLED.h"
-#include "coordinates_sample_test_json.h"
+#include "test_json.h"
 #include <ArduinoJson.h>
 #include <math.h>
 #define NUM_CLUSTERS 7
