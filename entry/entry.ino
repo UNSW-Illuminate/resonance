@@ -1,11 +1,11 @@
 #include "NodeGraph.h"
 #include "RippleEngine.h"
 #include "FastLED.h"
-#include "coordinates_new_json.h"
+#include "coordinates_sample_test_json.h"
 #include <ArduinoJson.h>
 #include <math.h>
+#define NUM_CLUSTERS 7
 
-#define DATA_PIN 6
 #define NUM_LEDS (MAX_NODES * NUM_LED_PER_NODE)
 #define JSON_DOC_CAPACITY 20000
 
@@ -16,7 +16,10 @@ const float RIPPLE_VISIBILITY_THRESHOLD = 0.18f;
 const uint8_t RIPPLE_PEAK_BRIGHTNESS = 255;
 const bool RIPPLE_TAKE_OVER = true;
 
-CRGB leds[NUM_LEDS];
+CRGB leds[NUM_CLUSTERS][NUM_LEDS];
+
+// maps cluster num (number between 0-6) to the datapin
+int CLUSTER_PIN[NUM_CLUSTERS] = {0, 1, 2, 3, 4, 5, 6};
 
 NodeGraph graph;
 Coord MAP_COORDS[MAX_NODES];
@@ -32,6 +35,7 @@ bool loadMapCoordsFromJson();
 void readSerialTrigger();
 void parseTrigger(String line);
 void updateLeds();
+bool addClusterLeds(uint8_t clusterId);
 
 void setup() {
   Serial.begin(115200);
@@ -41,10 +45,16 @@ void setup() {
   }
 
   if (!loadMapCoordsFromJson()) {
-    Serial.println("Failed to load coordinates_new.json");
+    Serial.println("Failed to load coordinates_sample_test.json");
   }
 
-  FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
+  for (uint8_t clusterId = 0; clusterId < NUM_CLUSTERS; clusterId++) {
+    if (!addClusterLeds(clusterId)) {
+      Serial.print("Unsupported cluster pin for cluster ");
+      Serial.println(clusterId);
+    }
+  }
+
   FastLED.clear();
   FastLED.show();
 
@@ -142,8 +152,6 @@ void parseTrigger(String line) {
 }
 
 void updateLeds() {
-  FastLED.clear();
-
   for (uint16_t i = 0; i < graph.count(); i++) {
     Node& node = graph.nodeAt(i);
     float t = node.brightness / 255.0f;
@@ -167,13 +175,66 @@ void updateLeds() {
       nodeColour = blend(RIPPLE_PRIMARY_COLOUR, RIPPLE_SECONDARY_COLOUR, waveBrightness);
     }
 
+    
+
+    // if (node.clusterId >= NUM_CLUSTERS) {
+    //   continue;
+    // }
+
+    uint16_t startLedIndex = node.clusterIndex;
     for (uint8_t j = 0; j < NUM_LED_PER_NODE; j++) {
-      uint16_t ledIndex = node.ledIndex + j;
+      uint16_t ledIndex = startLedIndex + j;
       if (ledIndex < NUM_LEDS) {
-        leds[ledIndex] = nodeColour;
+        leds[node.clusterId][ledIndex] = nodeColour;
       }
     }
   }
 
   FastLED.show();
 }
+
+bool addClusterLeds(uint8_t clusterId) {
+  if (clusterId >= NUM_CLUSTERS) {
+    return false;
+  }
+
+  uint8_t dataPin = CLUSTER_PIN[clusterId];
+  bool added = true;
+
+  switch (dataPin) {
+    case 0:
+      FastLED.addLeds<WS2812B, 0, GRB>(leds[clusterId], NUM_LEDS);
+      break;
+    case 1:
+      FastLED.addLeds<WS2812B, 1, GRB>(leds[clusterId], NUM_LEDS);
+      break;
+    case 2:
+      FastLED.addLeds<WS2812B, 2, GRB>(leds[clusterId], NUM_LEDS);
+      break;
+    case 3:
+      FastLED.addLeds<WS2812B, 3, GRB>(leds[clusterId], NUM_LEDS);
+      break;
+    case 4:
+      FastLED.addLeds<WS2812B, 4, GRB>(leds[clusterId], NUM_LEDS);
+      break;
+    case 5:
+      FastLED.addLeds<WS2812B, 5, GRB>(leds[clusterId], NUM_LEDS);
+      break;
+    case 6:
+      FastLED.addLeds<WS2812B, 6, GRB>(leds[clusterId], NUM_LEDS);
+      break;
+    default:
+      added = false;
+      break;
+  }
+
+  if (added) {
+    Serial.print("Cluster ");
+    Serial.print(clusterId);
+    Serial.print(" mapped to data pin ");
+    Serial.println(dataPin);
+  }
+
+  return added;
+}
+
