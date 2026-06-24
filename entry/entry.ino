@@ -6,6 +6,17 @@
 #include <math.h>
 #define NUM_CLUSTERS 7
 
+#define DATA_PIN 6
+
+#define REED_OUTPUT_1 4
+#define REED_OUTPUT_2 5
+#define REED_OUTPUT_3 6
+#define REED_OUTPUT_4 7
+#define REED_OUTPUT_5 8
+#define REED_OUTPUT_6 9
+#define REED_OUTPUT_7 10
+
+
 #define NUM_LEDS (MAX_NODES * NUM_LED_PER_NODE)
 #define JSON_DOC_CAPACITY 20000
 
@@ -38,6 +49,15 @@ void updateLeds();
 bool addClusterLeds(uint8_t clusterId);
 
 void setup() {
+
+  pinMode(REED_OUTPUT_1, INPUT_PULLUP);
+  pinMode(REED_OUTPUT_2, INPUT_PULLUP);
+  pinMode(REED_OUTPUT_3, INPUT_PULLUP);
+  pinMode(REED_OUTPUT_4, INPUT_PULLUP);
+  pinMode(REED_OUTPUT_5, INPUT_PULLUP);
+  pinMode(REED_OUTPUT_6, INPUT_PULLUP);
+  pinMode(REED_OUTPUT_7, INPUT_PULLUP);
+
   Serial.begin(115200);
 
   while (!Serial && millis() < 3000) {
@@ -79,7 +99,8 @@ void setup() {
 }
 
 void loop() {
-  readSerialTrigger();
+  // readSerialTrigger();
+  checkReedInputs();
 
   if (ripple.readyToTick()) {
     ripple.updatePhysics();
@@ -87,6 +108,32 @@ void loop() {
     updateLeds();
   }
 }
+
+void checkReedInputs() {
+  // Define reed pin assignments in order
+  const uint8_t reedPins[] = {REED_OUTPUT_1, REED_OUTPUT_2, REED_OUTPUT_3, REED_OUTPUT_4, REED_OUTPUT_5, REED_OUTPUT_6, REED_OUTPUT_7};
+  uint8_t reedIndex = 0;
+  
+  // Iterate through all nodes in the graph
+  for (uint16_t i = 0; i < graph.count(); i++) {
+    Node& node = graph.nodeAt(i);
+    
+    // Check if this node is a reed (not a bush)
+    if (!node.isBush) {
+      // Check if we haven't exceeded the number of reed pins
+      if (reedIndex < sizeof(reedPins) / sizeof(reedPins[0])) {
+        // Check if the corresponding pin is LOW
+        if (digitalRead(reedPins[reedIndex]) == LOW) {
+          // Trigger the ripple at this reed's row and col
+          ripple.trigger(node.row, node.col);
+        }
+        reedIndex++;
+      }
+    }
+  }
+}
+
+
 
 bool appendCoordsFromSection(JsonArray section, bool isBush, uint16_t& mapIndex) {
   for (JsonObject point : section) {
