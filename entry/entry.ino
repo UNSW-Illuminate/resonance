@@ -37,7 +37,7 @@ Coord MAP_COORDS[MAX_NODES];
 uint16_t MAP_COUNT = 0;
 
 // parameters in order are thickness, tick_delay (ms), maxRadius, bands, speed
-RippleEngine ripple(graph, 100.0f, 120, 1500.0f, 1, 40.0f);
+RippleEngine ripple(graph, 100.0f, 120, 1500.0f, 1, 80.0f);
 
 String serialLine = "";
 
@@ -99,8 +99,8 @@ void setup() {
 }
 
 void loop() {
-  // readSerialTrigger();
-  checkReedInputs();
+  readSerialTrigger();
+  //checkReedInputs();
 
   if (ripple.readyToTick()) {
     ripple.updatePhysics();
@@ -123,7 +123,7 @@ void checkReedInputs() {
       // Check if we haven't exceeded the number of reed pins
       if (reedIndex < sizeof(reedPins) / sizeof(reedPins[0])) {
         // Check if the corresponding pin is LOW
-        if (digitalRead(reedPins[reedIndex]) == LOW) {
+        if (digitalRead(reedPins[reedIndex]) == HIGH) {
           // Trigger the ripple at this reed's row and col
           ripple.trigger(node.row, node.col);
         }
