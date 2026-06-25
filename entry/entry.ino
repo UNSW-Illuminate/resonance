@@ -193,6 +193,10 @@ void updateLeds() {
     // skip reeds that aren't triggered
     if (node.isBush == false) {
       if (node.isTriggeredReed == true) {
+        Serial.print("IN ENTRY INO Reed node triggered at row: ");
+        Serial.print(node.row);
+        Serial.print(", col: ");
+        Serial.println(node.col);
         // cycle through all leds in this reed cluster
         for (uint8_t j = 0; j < NUM_LED_PER_NODE; j++) {
           leds[node.clusterId][j] = CRGB::Blue;

@@ -41,6 +41,10 @@ bool RippleEngine::trigger(int16_t row, int16_t col) {
   if (source->isBush == false) {
     // is reed
     source->isTriggeredReed = true;
+    Serial.print("IN RIPPLE ENGINE Reed node triggered at row: ");
+    Serial.print(row);
+    Serial.print(", col: ");
+    Serial.println(col);
   }
 
   unsigned long now = millis();
