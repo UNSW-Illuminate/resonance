@@ -4,9 +4,20 @@
 #include "test_json.h"
 #include <ArduinoJson.h>
 #include <math.h>
-#define NUM_CLUSTERS 7
+#define CLUSTER_CONFIG_LIST(X) \
+  X(0, 0) \
+  X(1, 1) \
+  X(2, 2) \
+  X(3, 3) \
+  X(4, 4) \
+  X(5, 5) \
+  X(6, 6)
 
-#define DATA_PIN 6
+#define CLUSTER_PIN_VALUE(clusterId, pin) pin,
+#define CLUSTER_COUNT_ENTRY(clusterId, pin) +1
+
+constexpr uint8_t CLUSTER_PIN[] = {CLUSTER_CONFIG_LIST(CLUSTER_PIN_VALUE)};
+constexpr uint8_t NUM_CLUSTERS = 0 CLUSTER_CONFIG_LIST(CLUSTER_COUNT_ENTRY);
 
 #define REED_OUTPUT_1 4
 #define REED_OUTPUT_2 5
@@ -16,25 +27,61 @@
 #define REED_OUTPUT_6 9
 #define REED_OUTPUT_7 10
 
-
 #define NUM_LEDS (MAX_NODES * NUM_LED_PER_NODE)
 #define JSON_DOC_CAPACITY 20000
 
-const CRGB RIPPLE_PRIMARY_COLOUR(0, 0, 6);
-const CRGB RIPPLE_SECONDARY_COLOUR(20, 220, 255);
-const float RIPPLE_SHARPNESS = 1.6f;
-const float RIPPLE_VISIBILITY_THRESHOLD = 0.18f;
-const uint8_t RIPPLE_PEAK_BRIGHTNESS = 255;
-const bool RIPPLE_TAKE_OVER = true;
+struct FastLedModeConfig {
+  const char* name;
+  uint8_t brightness;
+  CRGB primaryColour;
+  CRGB secondaryColour;
+  float sharpness;
+  float visibilityThreshold;
+  uint8_t peakBrightness;
+  bool takeOver;
+};
+
+const FastLedModeConfig FASTLED_MODES[] = {
+  {
+    "ripple",
+    255,
+    CRGB(0, 0, 6),
+    CRGB(20, 220, 255),
+    1.6f,
+    0.18f,
+    255,
+    true
+  },
+  {
+    "ember",
+    180,
+    CRGB(8, 1, 0),
+    CRGB(255, 90, 18),
+    2.2f,
+    0.10f,
+    220,
+    true
+  },
+  {
+    "bloom",
+    200,
+    CRGB(0, 6, 4),
+    CRGB(120, 255, 170),
+    1.2f,
+    0.08f,
+    255,
+    false
+  }
+};
+
+constexpr uint8_t FASTLED_MODE_COUNT = sizeof(FASTLED_MODES) / sizeof(FASTLED_MODES[0]);
 
 CRGB leds[NUM_CLUSTERS][NUM_LEDS];
-
-// maps cluster num (number between 0-6) to the datapin
-int CLUSTER_PIN[NUM_CLUSTERS] = {0, 1, 2, 3, 4, 5, 6};
 
 NodeGraph graph;
 Coord MAP_COORDS[MAX_NODES];
 uint16_t MAP_COUNT = 0;
+const FastLedModeConfig* activeMode = &FASTLED_MODES[0];
 
 // parameters in order are thickness, tick_delay (ms), maxRadius, bands, speed
 RippleEngine ripple(graph, 100.0f, 120, 1500.0f, 1, 80.0f);
@@ -47,6 +94,9 @@ void readSerialTrigger();
 void parseTrigger(String line);
 void updateLeds();
 bool addClusterLeds(uint8_t clusterId);
+const FastLedModeConfig* findModeByName(const String& modeName);
+void applyMode(const FastLedModeConfig& mode);
+void printAvailableModes();
 
 void setup() {
 
@@ -75,6 +125,7 @@ void setup() {
     }
   }
 
+  applyMode(*activeMode);
   FastLED.clear();
   FastLED.show();
 
@@ -96,6 +147,8 @@ void setup() {
   Serial.println(MAP_COUNT);
   Serial.println("Send trigger as: row,col");
   Serial.println("Example: 3002,2988");
+  Serial.println("Switch modes with: mode:<name>");
+  printAvailableModes();
 }
 
 void loop() {
@@ -132,8 +185,6 @@ void checkReedInputs() {
     }
   }
 }
-
-
 
 bool appendCoordsFromSection(JsonArray section, bool isBush, uint16_t& mapIndex) {
   for (JsonObject point : section) {
@@ -186,6 +237,29 @@ void readSerialTrigger() {
 }
 
 void parseTrigger(String line) {
+  line.trim();
+
+  if (line.startsWith("mode:")) {
+    String modeName = line.substring(5);
+    modeName.trim();
+
+    const FastLedModeConfig* mode = findModeByName(modeName);
+    if (mode == nullptr) {
+      Serial.print("Unknown mode: ");
+      Serial.println(modeName);
+      printAvailableModes();
+      return;
+    }
+
+    applyMode(*mode);
+    return;
+  }
+
+  if (line.equalsIgnoreCase("modes")) {
+    printAvailableModes();
+    return;
+  }
+
   int commaIndex = line.indexOf(',');
 
   if (commaIndex == -1) {
@@ -199,34 +273,37 @@ void parseTrigger(String line) {
 }
 
 void updateLeds() {
+  for (uint8_t clusterId = 0; clusterId < NUM_CLUSTERS; clusterId++) {
+    fill_solid(leds[clusterId], NUM_LEDS, activeMode->primaryColour);
+  }
+
   for (uint16_t i = 0; i < graph.count(); i++) {
     Node& node = graph.nodeAt(i);
+    // skips reeds, so they don't get updated with their 'brightness' - check that they are set to constant brightness
+    if (node.isBush == false) {
+      continue;
+    }
+
     float t = node.brightness / 255.0f;
     t = constrain(t, 0.0f, 1.0f);
 
     float visible = 0.0f;
-    if (t > RIPPLE_VISIBILITY_THRESHOLD) {
-      visible = (t - RIPPLE_VISIBILITY_THRESHOLD) / (1.0f - RIPPLE_VISIBILITY_THRESHOLD);
+    if (t > activeMode->visibilityThreshold) {
+      visible = (t - activeMode->visibilityThreshold) / (1.0f - activeMode->visibilityThreshold);
     }
 
-    float blendFactor = powf(visible, RIPPLE_SHARPNESS);
-    uint8_t waveBrightness = (uint8_t)(blendFactor * RIPPLE_PEAK_BRIGHTNESS);
+    float blendFactor = powf(visible, activeMode->sharpness);
+    uint8_t waveBrightness = (uint8_t)(blendFactor * activeMode->peakBrightness);
 
-    CRGB nodeColour = RIPPLE_PRIMARY_COLOUR;
+    CRGB nodeColour = activeMode->primaryColour;
 
-    if (RIPPLE_TAKE_OVER) {
-      CRGB activeColour = RIPPLE_SECONDARY_COLOUR;
+    if (activeMode->takeOver) {
+      CRGB activeColour = activeMode->secondaryColour;
       activeColour.nscale8_video(waveBrightness);
       nodeColour += activeColour;
     } else {
-      nodeColour = blend(RIPPLE_PRIMARY_COLOUR, RIPPLE_SECONDARY_COLOUR, waveBrightness);
+      nodeColour = blend(activeMode->primaryColour, activeMode->secondaryColour, waveBrightness);
     }
-
-    
-
-    // if (node.clusterId >= NUM_CLUSTERS) {
-    //   continue;
-    // }
 
     uint16_t startLedIndex = node.clusterIndex;
     for (uint8_t j = 0; j < NUM_LED_PER_NODE; j++) {
@@ -240,6 +317,32 @@ void updateLeds() {
   FastLED.show();
 }
 
+const FastLedModeConfig* findModeByName(const String& modeName) {
+  for (uint8_t i = 0; i < FASTLED_MODE_COUNT; i++) {
+    if (modeName.equalsIgnoreCase(FASTLED_MODES[i].name)) {
+      return &FASTLED_MODES[i];
+    }
+  }
+
+  return nullptr;
+}
+
+void applyMode(const FastLedModeConfig& mode) {
+  activeMode = &mode;
+  FastLED.setBrightness(mode.brightness);
+
+  Serial.print("Active mode: ");
+  Serial.println(mode.name);
+}
+
+void printAvailableModes() {
+  Serial.println("Available modes:");
+  for (uint8_t i = 0; i < FASTLED_MODE_COUNT; i++) {
+    Serial.print(" - ");
+    Serial.println(FASTLED_MODES[i].name);
+  }
+}
+
 bool addClusterLeds(uint8_t clusterId) {
   if (clusterId >= NUM_CLUSTERS) {
     return false;
@@ -248,28 +351,16 @@ bool addClusterLeds(uint8_t clusterId) {
   uint8_t dataPin = CLUSTER_PIN[clusterId];
   bool added = true;
 
-  switch (dataPin) {
-    case 0:
-      FastLED.addLeds<WS2812B, 0, GRB>(leds[clusterId], NUM_LEDS);
+  switch (clusterId) {
+#define ADD_CLUSTER_CASE(clusterIdValue, pin) \
+    case clusterIdValue:                       \
+      FastLED.addLeds<WS2812B, pin, GRB>(      \
+        leds[clusterIdValue],                  \
+        NUM_LEDS                               \
+      );                                       \
       break;
-    case 1:
-      FastLED.addLeds<WS2812B, 1, GRB>(leds[clusterId], NUM_LEDS);
-      break;
-    case 2:
-      FastLED.addLeds<WS2812B, 2, GRB>(leds[clusterId], NUM_LEDS);
-      break;
-    case 3:
-      FastLED.addLeds<WS2812B, 3, GRB>(leds[clusterId], NUM_LEDS);
-      break;
-    case 4:
-      FastLED.addLeds<WS2812B, 4, GRB>(leds[clusterId], NUM_LEDS);
-      break;
-    case 5:
-      FastLED.addLeds<WS2812B, 5, GRB>(leds[clusterId], NUM_LEDS);
-      break;
-    case 6:
-      FastLED.addLeds<WS2812B, 6, GRB>(leds[clusterId], NUM_LEDS);
-      break;
+    CLUSTER_CONFIG_LIST(ADD_CLUSTER_CASE)
+#undef ADD_CLUSTER_CASE
     default:
       added = false;
       break;
@@ -284,4 +375,3 @@ bool addClusterLeds(uint8_t clusterId) {
 
   return added;
 }
-

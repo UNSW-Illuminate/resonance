@@ -29,6 +29,13 @@ public:
   bool trigger(int16_t row, int16_t col);
   void updatePhysics();
   void printBrightness() const;
+  void configure(
+    float newThickness,
+    unsigned long newTickDelayMs,
+    float newMaxRadius,
+    uint8_t newBands,
+    float newSpeed
+  );
 
   void setBandSpace(float newBandSpace);
   void clearBandSpace();
