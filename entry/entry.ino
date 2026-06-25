@@ -180,6 +180,11 @@ void parseTrigger(String line) {
   int row = line.substring(0, commaIndex).toInt();
   int col = line.substring(commaIndex + 1).toInt();
 
+  Serial.print("Triggering ripple at row: ");
+  Serial.print(row);
+  Serial.print(", col: ");
+  Serial.println(col);
+
   ripple.trigger(row, col);
 }
 

@@ -36,6 +36,10 @@ bool RippleEngine::readyToTick() const {
 bool RippleEngine::trigger(int16_t row, int16_t col) {
   Node* source = graph.getNode(row, col);
   if (source == nullptr) {
+    Serial.print("Node not found at row: ");
+    Serial.print(row);
+    Serial.print(", col: ");
+    Serial.println(col);
     return false;
   }
   if (source->isBush == false) {
