@@ -128,7 +128,29 @@ void loop() {
       comms.clearRippleTrigger();
   }
 
-  // 3. Render LED Animation frames
+  // 3. Auto Ripple logic
+  if (currentState.autoRipple && strcmp(currentState.mode, "ripple") == 0) {
+      static unsigned long lastAutoRippleMs = 0;
+      static uint16_t currentDelay = currentState.autoRippleInterval;
+
+      if (millis() - lastAutoRippleMs > currentDelay) {
+          lastAutoRippleMs = millis();
+          if (graph.count() > 0) {
+              uint16_t randNode = random(graph.count());
+              Node& node = graph.nodeAt(randNode);
+              ripple.trigger(node.row, node.col);
+              Serial.print("Auto Ripple Triggered at node: ");
+              Serial.println(randNode);
+          }
+          if (currentState.autoRippleVariable) {
+              currentDelay = random(500, currentState.autoRippleInterval + 1);
+          } else {
+              currentDelay = currentState.autoRippleInterval;
+          }
+      }
+  }
+
+  // 4. Render LED Animation frames
   if (ripple.readyToTick()) {
     ripple.updatePhysics();
     updateLeds();
@@ -210,7 +232,7 @@ void updateLeds() {
                 }
             }
         }
-    } else if (strncmp(currentState.mode, "palette_", 8) == 0) {
+    } else if (strncmp(currentState.mode, "palette_", 8) == 0 || strcmp(currentState.mode, "rainbow") == 0) {
         static uint8_t startIndex = 0;
         startIndex = startIndex + (currentState.speed / 10);
         
@@ -219,7 +241,10 @@ void updateLeds() {
         else if (strcmp(currentState.mode, "palette_lava") == 0) currentPalette = LavaColors_p;
         else if (strcmp(currentState.mode, "palette_forest") == 0) currentPalette = ForestColors_p;
         else if (strcmp(currentState.mode, "palette_party") == 0) currentPalette = PartyColors_p;
-        else if (strcmp(currentState.mode, "palette_cloud") == 0) currentPalette = CloudColors_p;
+        else if (strcmp(currentState.mode, "palette_cloud") == 0) {
+            // Custom light blue palette for clouds
+            currentPalette = CRGBPalette16(CRGB::LightSkyBlue, CRGB::SkyBlue, CRGB::DeepSkyBlue, CRGB::AliceBlue);
+        }
         else currentPalette = RainbowColors_p;
 
         for (int i = 0; i < NUM_CLUSTERS; i++) {

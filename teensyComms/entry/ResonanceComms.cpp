@@ -162,6 +162,10 @@ void ResonanceComms::parseMessage(const char* line) {
       state_.reedColor[2] = reed[2];
     }
 
+    state_.autoRipple = doc["autoRipple"] | false;
+    state_.autoRippleVariable = doc["autoRippleVariable"] | false;
+    state_.autoRippleInterval = doc["autoRippleInterval"] | 5000;
+
     hasStateUpdate_ = true;
     DEBUG_PRINTLN("[ResonanceComms] State updated successfully.");
     sendAck("state");

@@ -12,6 +12,9 @@ struct LightingCommandState {
   uint8_t primaryColor[3];
   uint8_t secondaryColor[3];
   uint8_t reedColor[3];
+  bool autoRipple;
+  bool autoRippleVariable;
+  uint16_t autoRippleInterval;
 };
 
 struct RippleTriggerCommand {
