@@ -34,9 +34,16 @@ bool RippleEngine::readyToTick() const {
 }
 
 bool RippleEngine::trigger(int16_t row, int16_t col) {
-  const Node* source = graph.getNode(row, col);
+  Node* source = graph.getNode(row, col);
   if (source == nullptr) {
     return false;
+  }
+  if (source->isBush == false) {
+    source->isTriggeredReed = true;
+    Serial.print("IN RIPPLE ENGINE Reed node triggered at row: ");
+    Serial.print(row);
+    Serial.print(", col: ");
+    Serial.println(col);
   }
 
   unsigned long now = millis();

@@ -155,6 +155,13 @@ void ResonanceComms::parseMessage(const char* line) {
       state_.secondaryColor[2] = sec[2];
     }
 
+    JsonArray reed = doc["reedColor"];
+    if (reed && reed.size() == 3) {
+      state_.reedColor[0] = reed[0];
+      state_.reedColor[1] = reed[1];
+      state_.reedColor[2] = reed[2];
+    }
+
     hasStateUpdate_ = true;
     DEBUG_PRINTLN("[ResonanceComms] State updated successfully.");
     sendAck("state");

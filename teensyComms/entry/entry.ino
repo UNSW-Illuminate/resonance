@@ -10,6 +10,7 @@
 #define NUM_CLUSTERS 7
 #define NUM_LEDS 680
 #define JSON_DOC_CAPACITY 20000
+#define REED_INPUT_1 24
 
 // Define 7 GPIO Pins for the LED branches
 const uint8_t CLUSTER_PINS[NUM_CLUSTERS] = {2, 3, 4, 5, 6, 7, 9};
@@ -39,8 +40,10 @@ static uint8_t serialRxBuffer[2048];
 bool appendCoordsFromSection(JsonArray section, bool isBush, uint16_t& mapIndex);
 bool loadMapCoordsFromJson();
 void updateLeds();
+void checkReedInputs();
 
 void setup() {
+  pinMode(REED_INPUT_1, INPUT_PULLUP);
   Serial.begin(115200);
   delay(1000);
   Serial.println("Starting Setup...");
@@ -111,6 +114,8 @@ void loop() {
       Serial.println("Received UI State Update");
   }
 
+  checkReedInputs();
+
   // 2. Process Ripples triggers from ESP32
   if (comms.hasRippleTrigger()) {
       const auto& trigger = comms.rippleTrigger();
@@ -133,6 +138,13 @@ void loop() {
 // --------------------------------------------------------------------------
 // rendering logic
 // --------------------------------------------------------------------------
+void checkReedInputs() {
+  if (digitalRead(REED_INPUT_1) == LOW) {
+      Serial.println("Reed 1 triggered");
+      ripple.trigger(2785, 3184);
+  }
+}
+
 void updateLeds() {
     if (!currentState.enabled || strcmp(currentState.mode, "off") == 0) {
         FastLED.clear();
@@ -153,7 +165,21 @@ void updateLeds() {
         // Overlay Ripples
         for (uint16_t i = 0; i < graph.count(); i++) {
             Node& node = graph.nodeAt(i);
-            if (!node.isBush) continue;
+            
+            if (!node.isBush) {
+                if (node.isTriggeredReed) {
+                    CRGB rColor(currentState.reedColor[0], currentState.reedColor[1], currentState.reedColor[2]);
+                    uint16_t startLedIndex = node.clusterIndex;
+                    for (uint8_t j = 0; j < NUM_LED_PER_NODE; j++) {
+                        uint16_t ledIndex = startLedIndex + j;
+                        if (ledIndex < NUM_LEDS && node.clusterId < NUM_CLUSTERS) {
+                            leds[node.clusterId][ledIndex] = rColor;
+                        }
+                    }
+                    node.isTriggeredReed = false;
+                }
+                continue;
+            }
 
             float t = node.brightness / 255.0f;
             t = constrain(t, 0.0f, 1.0f);

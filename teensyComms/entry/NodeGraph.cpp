@@ -34,6 +34,7 @@ bool NodeGraph::addNode(
   node.brightness = 0;
   node.startLED = 0;
   node.isBush = isBush;
+  node.isTriggeredReed = false;
   node.clusterId = clusterId;
   node.clusterIndex = clusterIndex;
   node.neighbourCount = 0;
