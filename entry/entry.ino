@@ -103,8 +103,8 @@ void setup() {
 }
 
 void loop() {
-  // readSerialTrigger();
-  checkReedInputs();
+  readSerialTrigger();
+  // checkReedInputs();
 
   if (ripple.readyToTick()) {
     ripple.updatePhysics();
