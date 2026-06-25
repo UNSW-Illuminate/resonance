@@ -138,20 +138,20 @@ const char COORDINATES_JSON[] = R"json(
     {
       "x": 1213.11,
       "y": 525.35,
-      "cluster_id": 1,
-      "cluster_index": 27
+      "cluster_id": 6,
+      "cluster_index": 45
     },
     {
       "x": 1320.13,
       "y": 382.72,
-      "cluster_id": 2,
-      "cluster_index": 27
+      "cluster_id": 6,
+      "cluster_index": 54
     },
     {
       "x": 1145.01,
       "y": 299.95,
-      "cluster_id": 3,
-      "cluster_index": 27
+      "cluster_id": 6,
+      "cluster_index": 63
     },
     {
       "x": 2705.58,
@@ -186,8 +186,8 @@ const char COORDINATES_JSON[] = R"json(
     {
       "x": 1018.22,
       "y": 867.87,
-      "cluster_id": 2,
-      "cluster_index": 36
+      "cluster_id": 6,
+      "cluster_index": 0
     },
     {
       "x": 1841.23,
@@ -211,7 +211,7 @@ const char COORDINATES_JSON[] = R"json(
       "x": 1127.96,
       "y": 718.64,
       "cluster_id": 6,
-      "cluster_index": 36
+      "cluster_index": 9
     },
     {
       "x": 709.21,
@@ -222,8 +222,8 @@ const char COORDINATES_JSON[] = R"json(
     {
       "x": 1028.47,
       "y": 411.19,
-      "cluster_id": 1,
-      "cluster_index": 45
+      "cluster_id": 6,
+      "cluster_index": 36
     },
     {
       "x": 711.74,
