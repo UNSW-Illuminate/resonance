@@ -37,6 +37,7 @@ bool NodeGraph::addNode(
   node.clusterId = clusterId;
   node.clusterIndex = clusterIndex;
   node.neighbourCount = 0;
+  node.isTriggeredReed = false;
 
   uint16_t newIndex = nodeCount;
   nodeCount++;

@@ -21,6 +21,7 @@ struct Node {
   uint8_t brightness;
   uint8_t startLED;
   bool isBush;
+  bool isTriggeredReed;
   uint8_t clusterId;
   uint16_t clusterIndex;
 
