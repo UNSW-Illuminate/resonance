@@ -38,6 +38,10 @@ bool RippleEngine::trigger(int16_t row, int16_t col) {
   if (source == nullptr) {
     return false;
   }
+  if (source->isBush == false) {
+    // is reed
+    source->isTriggeredReed = true;
+  }
 
   unsigned long now = millis();
 

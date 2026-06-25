@@ -11,7 +11,14 @@
   X(3, 3) \
   X(4, 4) \
   X(5, 5) \
-  X(6, 6)
+  X(6, 6) \
+  X(7, 7) \
+  X(8, 8) \
+  X(9, 9) \
+  X(10, 10) \
+  X(11, 11) \
+  X(12, 12) \
+  X(13, 13)
 
 #define CLUSTER_PIN_VALUE(clusterId, pin) pin,
 #define CLUSTER_COUNT_ENTRY(clusterId, pin) +1
@@ -182,7 +189,22 @@ void updateLeds() {
 
   for (uint16_t i = 0; i < graph.count(); i++) {
     Node& node = graph.nodeAt(i);
+    // skip reeds that aren't triggered
     if (node.isBush == false) {
+      if (node.isTriggeredReed == true) {
+        // cycle through all leds in this reed cluster
+
+        uint16_t startLedIndex = node.clusterIndex;
+        // 4 times 9
+        for (uint8_t j = 0; j < NUM_LED_PER_NODE * 4; j++) {
+          uint16_t ledIndex = startLedIndex + j;
+          if (ledIndex < NUM_LEDS) {
+            leds[node.clusterId][ledIndex] = CRGB::Blue;
+          }
+        }
+
+        node.isTriggeredReed = false;
+      }
       continue;
     }
 
