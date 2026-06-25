@@ -161,21 +161,6 @@ void RippleEngine::printBrightness() const {
   }
 }
 
-void RippleEngine::configure(
-  float newThickness,
-  unsigned long newTickDelayMs,
-  float newMaxRadius,
-  uint8_t newBands,
-  float newSpeed
-) {
-  thickness = newThickness;
-  tickDelayMs = newTickDelayMs;
-  maxRadius = newMaxRadius;
-  numBands = newBands;
-  waveSpeed = newSpeed;
-  wavelength = thickness * 2.0f;
-}
-
 void RippleEngine::setBandSpace(float newBandSpace) {
   bandSpace = newBandSpace;
   hasBandSpace = true;
