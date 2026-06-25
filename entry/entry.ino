@@ -103,8 +103,8 @@ void setup() {
 }
 
 void loop() {
-  // readSerialTrigger();
-  checkReedInputs();
+  readSerialTrigger();
+  // checkReedInputs();
 
   if (ripple.readyToTick()) {
     ripple.updatePhysics();
@@ -191,21 +191,7 @@ void updateLeds() {
   for (uint16_t i = 0; i < graph.count(); i++) {
     Node& node = graph.nodeAt(i);
     // skip reeds that aren't triggered
-    if (node.isBush == false) {
-      if (node.isTriggeredReed == true) {
-        Serial.print("IN ENTRY INO Reed node triggered at row: ");
-        Serial.print(node.row);
-        Serial.print(", col: ");
-        Serial.println(node.col);
-        // cycle through all leds in this reed cluster
-        for (uint8_t j = 0; j < NUM_LED_PER_NODE; j++) {
-          leds[node.clusterId][j] = CRGB::Blue;
-        }
-
-        node.isTriggeredReed = false;
-      }
-      continue;
-    }
+    
 
     float t = node.brightness / 255.0f;
     t = constrain(t, 0.0f, 1.0f);
@@ -226,6 +212,22 @@ void updateLeds() {
       nodeColour += activeColour;
     } else {
       nodeColour = blend(RIPPLE_PRIMARY_COLOUR, RIPPLE_SECONDARY_COLOUR, waveBrightness);
+    }
+
+    if (node.isBush == false) {
+      if (node.isTriggeredReed == true) {
+        Serial.print("IN ENTRY INO Reed node triggered at row: ");
+        Serial.print(node.row);
+        Serial.print(", col: ");
+        Serial.println(node.col);
+        // cycle through all leds in this reed cluster
+        for (uint8_t j = 0; j < NUM_LED_PER_NODE; j++) {
+          leds[node.clusterId][j] = nodeColour;
+        }
+
+        node.isTriggeredReed = false;
+      }
+      continue;
     }
 
     uint16_t startLedIndex = node.clusterIndex;
