@@ -26,7 +26,7 @@
 constexpr uint8_t CLUSTER_PIN[] = {CLUSTER_CONFIG_LIST(CLUSTER_PIN_VALUE)};
 constexpr uint8_t NUM_CLUSTERS = 0 CLUSTER_CONFIG_LIST(CLUSTER_COUNT_ENTRY);
 
-#define REED_OUTPUT_1 8
+#define REED_INPUT_1 24
 
 #define NUM_LEDS (MAX_NODES * NUM_LED_PER_NODE)
 #define JSON_DOC_CAPACITY 20000
@@ -59,7 +59,7 @@ bool addClusterLeds(uint8_t clusterId);
 
 void setup() {
 
-  pinMode(REED_OUTPUT_1, INPUT_PULLUP);
+  pinMode(REED_INPUT_1, INPUT_PULLUP);
 
   Serial.begin(115200);
 
@@ -103,7 +103,7 @@ void setup() {
 }
 
 void loop() {
-  readSerialTrigger();
+  // readSerialTrigger();
   checkReedInputs();
 
   if (ripple.readyToTick()) {
@@ -114,7 +114,8 @@ void loop() {
 }
 
 void checkReedInputs() {
-  if (digitalRead(REED_OUTPUT_1) == LOW) {
+  if (digitalRead(REED_INPUT_1) == LOW) {
+      Serial.println("Reed 1 triggered");
       ripple.trigger(2785, 3184);
   }
 }
@@ -193,14 +194,8 @@ void updateLeds() {
     if (node.isBush == false) {
       if (node.isTriggeredReed == true) {
         // cycle through all leds in this reed cluster
-
-        uint16_t startLedIndex = node.clusterIndex;
-        // 4 times 9
-        for (uint8_t j = 0; j < NUM_LED_PER_NODE * 4; j++) {
-          uint16_t ledIndex = startLedIndex + j;
-          if (ledIndex < NUM_LEDS) {
-            leds[node.clusterId][ledIndex] = CRGB::Blue;
-          }
+        for (uint8_t j = 0; j < NUM_LED_PER_NODE; j++) {
+          leds[node.clusterId][j] = CRGB::Blue;
         }
 
         node.isTriggeredReed = false;

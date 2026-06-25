@@ -34,7 +34,7 @@ bool RippleEngine::readyToTick() const {
 }
 
 bool RippleEngine::trigger(int16_t row, int16_t col) {
-  const Node* source = graph.getNode(row, col);
+  Node* source = graph.getNode(row, col);
   if (source == nullptr) {
     return false;
   }
