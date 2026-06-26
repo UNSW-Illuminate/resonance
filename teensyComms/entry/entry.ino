@@ -7,20 +7,20 @@
 #include "ResonanceComms.h"
 
 // Define Hardware Setup
-#define NUM_CLUSTERS 7
+#define NUM_CLUSTERS 14
 #define NUM_LEDS 680
 #define JSON_DOC_CAPACITY 20000
 #define REED_INPUT_1 24
 
-// Define 7 GPIO Pins for the LED branches
-const uint8_t CLUSTER_PINS[NUM_CLUSTERS] = {2, 3, 4, 5, 6, 7, 9};
+// Define 14 GPIO Pins for the LED branches
+const uint8_t CLUSTER_PINS[NUM_CLUSTERS] = {7, 8, 12, 17, 4, 5, 6, 10, 1, 9, 16, 2, 21, 20};
 
 // Ripple physics tuning
 const float RIPPLE_SHARPNESS = 2.2f;
 const float RIPPLE_VISIBILITY_THRESHOLD = 0.10f;
 const bool RIPPLE_TAKE_OVER = true;
 
-// LED Memory Array (7 strips x 680 LEDs)
+// LED Memory Array (14 strips x 680 LEDs)
 CRGB leds[NUM_CLUSTERS][NUM_LEDS];
 
 // Logic Core
@@ -73,13 +73,20 @@ void setup() {
 
   // Initialize LED Clusters (using FastLED's native parallel capability)
   Serial.println("Adding LED clusters...");
-  FastLED.addLeds<WS2812B, 2, GRB>(leds[0], NUM_LEDS);
-  FastLED.addLeds<WS2812B, 3, GRB>(leds[1], NUM_LEDS);
-  FastLED.addLeds<WS2812B, 4, GRB>(leds[2], NUM_LEDS);
-  FastLED.addLeds<WS2812B, 5, GRB>(leds[3], NUM_LEDS);
-  FastLED.addLeds<WS2812B, 6, GRB>(leds[4], NUM_LEDS);
-  FastLED.addLeds<WS2812B, 7, GRB>(leds[5], NUM_LEDS);
-  FastLED.addLeds<WS2812B, 9, GRB>(leds[6], NUM_LEDS);
+  FastLED.addLeds<WS2812B, 7, GRB>(leds[0], NUM_LEDS);
+  FastLED.addLeds<WS2812B, 8, GRB>(leds[1], NUM_LEDS);
+  FastLED.addLeds<WS2812B, 12, GRB>(leds[2], NUM_LEDS);
+  FastLED.addLeds<WS2812B, 17, GRB>(leds[3], NUM_LEDS);
+  FastLED.addLeds<WS2812B, 4, GRB>(leds[4], NUM_LEDS);
+  FastLED.addLeds<WS2812B, 5, GRB>(leds[5], NUM_LEDS);
+  FastLED.addLeds<WS2812B, 6, GRB>(leds[6], NUM_LEDS);
+  FastLED.addLeds<WS2812B, 10, GRB>(leds[7], NUM_LEDS);
+  FastLED.addLeds<WS2812B, 1, GRB>(leds[8], NUM_LEDS);
+  FastLED.addLeds<WS2812B, 9, GRB>(leds[9], NUM_LEDS);
+  FastLED.addLeds<WS2812B, 16, GRB>(leds[10], NUM_LEDS);
+  FastLED.addLeds<WS2812B, 2, GRB>(leds[11], NUM_LEDS);
+  FastLED.addLeds<WS2812B, 21, GRB>(leds[12], NUM_LEDS);
+  FastLED.addLeds<WS2812B, 20, GRB>(leds[13], NUM_LEDS);
 
   // Set Default State
   currentState.enabled = true;
