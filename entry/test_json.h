@@ -416,7 +416,7 @@ const char COORDINATES_JSON[] = R"json(
     {
       "x": 1954.05,
       "y": 3410.5,
-      "cluster_id": 10
+      "cluster_id": 10,
       "cluster_index": 0
     },
     {

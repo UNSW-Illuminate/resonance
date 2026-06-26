@@ -132,6 +132,17 @@ bool appendCoordsFromSection(JsonArray section, bool isBush, uint16_t& mapIndex)
     MAP_COORDS[mapIndex].isBush = isBush;
     MAP_COORDS[mapIndex].clusterId = point["cluster_id"] | 0;
     MAP_COORDS[mapIndex].clusterIndex = point["cluster_index"] | 0;
+
+    Serial.print("Loaded coordinate: row=");
+    Serial.print(MAP_COORDS[mapIndex].row);
+    Serial.print(", col=");
+    Serial.print(MAP_COORDS[mapIndex].col);
+    Serial.print(", isBush=");
+    Serial.print(MAP_COORDS[mapIndex].isBush);
+    Serial.print(", clusterId=");
+    Serial.print(MAP_COORDS[mapIndex].clusterId);
+    Serial.print(", clusterIndex=");
+    Serial.println(MAP_COORDS[mapIndex].clusterIndex);
     mapIndex++;
   }
 
@@ -139,6 +150,7 @@ bool appendCoordsFromSection(JsonArray section, bool isBush, uint16_t& mapIndex)
 }
 
 bool loadMapCoordsFromJson() {
+  Serial.println("Loading coordinates from JSON...");
   DynamicJsonDocument doc(JSON_DOC_CAPACITY);
   DeserializationError error = deserializeJson(doc, COORDINATES_JSON);
 
