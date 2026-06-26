@@ -188,21 +188,6 @@ void updateLeds() {
         for (uint16_t i = 0; i < graph.count(); i++) {
             Node& node = graph.nodeAt(i);
             
-            if (!node.isBush) {
-                if (node.isTriggeredReed) {
-                    CRGB rColor(currentState.reedColor[0], currentState.reedColor[1], currentState.reedColor[2]);
-                    uint16_t startLedIndex = node.clusterIndex;
-                    for (uint8_t j = 0; j < NUM_LED_PER_NODE; j++) {
-                        uint16_t ledIndex = startLedIndex + j;
-                        if (ledIndex < NUM_LEDS && node.clusterId < NUM_CLUSTERS) {
-                            leds[node.clusterId][ledIndex] = rColor;
-                        }
-                    }
-                    node.isTriggeredReed = false;
-                }
-                continue;
-            }
-
             float t = node.brightness / 255.0f;
             t = constrain(t, 0.0f, 1.0f);
 
@@ -222,6 +207,26 @@ void updateLeds() {
                 nodeColour += activeColour;
             } else {
                 nodeColour = blend(primary, secondary, waveBrightness);
+            }
+
+            if (!node.isBush) {
+                if (node.isTriggeredReed) {
+                    Serial.print("IN ENTRY INO Reed node triggered at row: ");
+                    Serial.print(node.row);
+                    Serial.print(", col: ");
+                    Serial.println(node.col);
+                    
+                    uint16_t startLedIndex = node.clusterIndex;
+                    // cycle through all leds in this reed cluster
+                    for (uint8_t j = 0; j < NUM_LED_PER_NODE; j++) {
+                        uint16_t ledIndex = startLedIndex + j;
+                        if (ledIndex < NUM_LEDS && node.clusterId < NUM_CLUSTERS) {
+                            leds[node.clusterId][ledIndex] = nodeColour;
+                        }
+                    }
+                    node.isTriggeredReed = false;
+                }
+                continue;
             }
 
             uint16_t startLedIndex = node.clusterIndex;
@@ -285,12 +290,24 @@ bool appendCoordsFromSection(JsonArray section, bool isBush, uint16_t& mapIndex)
     MAP_COORDS[mapIndex].isBush = isBush;
     MAP_COORDS[mapIndex].clusterId = point["cluster_id"] | 0;
     MAP_COORDS[mapIndex].clusterIndex = point["cluster_index"] | 0;
+
+    Serial.print("Loaded coordinate: row=");
+    Serial.print(MAP_COORDS[mapIndex].row);
+    Serial.print(", col=");
+    Serial.print(MAP_COORDS[mapIndex].col);
+    Serial.print(", isBush=");
+    Serial.print(MAP_COORDS[mapIndex].isBush);
+    Serial.print(", clusterId=");
+    Serial.print(MAP_COORDS[mapIndex].clusterId);
+    Serial.print(", clusterIndex=");
+    Serial.println(MAP_COORDS[mapIndex].clusterIndex);
     mapIndex++;
   }
   return true;
 }
 
 bool loadMapCoordsFromJson() {
+  Serial.println("Loading coordinates from JSON...");
   DynamicJsonDocument doc(JSON_DOC_CAPACITY);
   DeserializationError error = deserializeJson(doc, COORDINATES_JSON);
 
