@@ -56,7 +56,7 @@ private:
 
   // Buffer state
   static const size_t kMaxLineLength = 4096;
-  char rxBuffer_[256]; 
+  char rxBuffer_[512]; 
   size_t rxIndex_;
   bool discardMode_;
   bool isGraphPayload_;
