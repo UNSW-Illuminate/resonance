@@ -5,20 +5,20 @@
 #include <ArduinoJson.h>
 #include <math.h>
 #define CLUSTER_CONFIG_LIST(X) \
-  X(0, 0) \
-  X(1, 1) \
-  X(2, 2) \
-  X(3, 3) \
+  X(0, 7) \
+  X(1, 8) \
+  X(2, 12) \
+  X(3, 17) \
   X(4, 4) \
   X(5, 5) \
   X(6, 6) \
-  X(7, 7) \
-  X(8, 8) \
+  X(7, 10) \
+  X(8, 1) \
   X(9, 9) \
-  X(10, 10) \
-  X(11, 11) \
-  X(12, 12) \
-  X(13, 13)
+  X(10, 16) \
+  X(11, 2) \
+  X(12, 21) \
+  X(13, 20)
 
 #define CLUSTER_PIN_VALUE(clusterId, pin) pin,
 #define CLUSTER_COUNT_ENTRY(clusterId, pin) +1
